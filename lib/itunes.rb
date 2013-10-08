@@ -1,6 +1,7 @@
 require 'json'
 require 'active_support/core_ext'
-require 'restclient_with_cert'
+# require 'restclient_with_cert'
+require 'faraday'
 
 module Itunes
 

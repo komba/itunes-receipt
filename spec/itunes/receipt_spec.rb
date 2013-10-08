@@ -3,6 +3,13 @@ require 'spec_helper'
 describe Itunes::Receipt do
 
   describe '.verify!' do
+    before do
+      @mock_http_response = stub("Faraday Response", :status => 200, :headers => @mock_headers_hash, :body => "{}")
+
+      @mock_connection = stub("Faraday connection")
+      @mock_connection.stub(:post).and_return(@mock_http_response)
+    end
+
     it 'should support sandbox mode' do
       sandbox_mode do
         expect do
@@ -14,7 +21,8 @@ describe Itunes::Receipt do
     it 'should not pass along shared secret if not set' do
       fake_json(:invalid)
       Itunes.shared_secret = nil
-      RestClient.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data'}.to_json).and_return("{}")
+      Faraday.should_receive(:new).with(anything).and_return(@mock_connection)
+
       expect do
         Itunes::Receipt.verify! 'receipt-data'
       end.to raise_error Itunes::Receipt::VerificationFailed
@@ -23,7 +31,8 @@ describe Itunes::Receipt do
     it 'should pass along shared secret if set' do
       fake_json(:invalid)
       Itunes.shared_secret = 'hey'
-      RestClient.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data', :password => 'hey'}.to_json).and_return("{}")
+      Faraday.should_receive(:new).with(anything).and_return(@mock_connection)
+
       expect do
         Itunes::Receipt.verify! 'receipt-data'
       end.to raise_error Itunes::Receipt::VerificationFailed
@@ -140,7 +149,7 @@ describe Itunes::Receipt do
         latest.version_external_identifier.should be_nil
       end
     end
-    
+
     context 'when expired autorenew subscription' do
       before do
         fake_json :autorenew_subscription_expired
@@ -155,7 +164,7 @@ describe Itunes::Receipt do
       end
 
     end
-    
+
     context 'when offline' do
       before do
         fake_json :offline
@@ -167,6 +176,6 @@ describe Itunes::Receipt do
         end.to raise_error Itunes::Receipt::ReceiptServerOffline
       end
     end
-    
+
   end
 end

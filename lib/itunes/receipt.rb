@@ -11,7 +11,7 @@ module Itunes
     end
 
     class SandboxReceiptReceived < VerificationFailed; end;
-    
+
     class ReceiptServerOffline < VerificationFailed; end;
 
     class ExpiredReceiptReceived < VerificationFailed
@@ -86,11 +86,15 @@ module Itunes
     private
 
     def self.post_to_endpoint(request_data, endpoint = Itunes.endpoint)
-      response = RestClient.post(
-        endpoint,
-        request_data.to_json
-      )
-      response = JSON.parse(response).with_indifferent_access
+      connection = Faraday.new(:url => endpoint) do |faraday|
+        faraday.adapter Faraday.default_adapter
+      end
+
+      response = connection.post do |req|
+        req.body = request_data.to_json
+      end
+
+      response = JSON.parse(response.body).with_indifferent_access
     end
 
     def self.successful_response(response)
