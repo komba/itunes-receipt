@@ -23,7 +23,7 @@ module Itunes
     end
 
     # expires_date, receipt_data, and latest (receipt) will only appear for autorenew subscription products
-    attr_reader :quantity, :product_id, :transaction_id, :purchase_date, :app_item_id, :version_external_identifier, :bid, :bvrs, :original, :expires_date, :receipt_data, :latest, :itunes_env
+    attr_reader :quantity, :product_id, :transaction_id, :purchase_date, :app_item_id, :version_external_identifier, :bid, :bvrs, :original, :expires_date, :receipt_data, :latest, :itunes_env, :in_app
 
     def initialize(attributes = {})
       receipt_attributes = attributes.with_indifferent_access[:receipt]
@@ -51,6 +51,10 @@ module Itunes
       if attributes[:latest_receipt_info]
         full_receipt_data = attributes[:latest_receipt] # should also be in the top-level hash if attributes[:latest_receipt_info] is there, but this won't break if it isn't
         @latest = self.class.new(:receipt => attributes[:latest_receipt_info], :latest_receipt => full_receipt_data, :receipt_type => :latest)
+      end
+      if receipt_attributes[:in_app]
+        in_app_data = receipt_attributes[:in_app]
+        @in_app = in_app_data.map{|d| self.class.new(:receipt => d) }
       end
       @expires_date = Time.at(receipt_attributes[:expires_date].to_i / 1000) if receipt_attributes[:expires_date]
       @receipt_data = attributes[:latest_receipt] if attributes[:receipt_type] == :latest # it feels wrong to include the receipt_data for the latest receipt on anything other than the latest receipt
